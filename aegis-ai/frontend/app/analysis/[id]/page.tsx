@@ -69,20 +69,27 @@ export default function AnalysisPage() {
 
   const handleApplyFix = async (fixIndex: number) => {
     if (!analysis) return;
-    
+  
     try {
       const result = await AegisApi.applyFix(params.id as string, fixIndex);
       if (result.success) {
-        // Refresh analysis data
+        setSelectedFix(null);
+        
+        // Show success message with details (safely handle optional fields)
+        const message = `✅ ${result.message}`;
+        const details = result.details ? `\n\n${result.details}` : '';
+        const nextSteps = result.next_steps ? `\n\n${result.next_steps}` : '';
+        
+        alert(message + details + nextSteps);
+        
+        // Refresh analysis data to show updated state
         const updatedAnalysis = await AegisApi.getAnalysis(params.id as string);
         setAnalysis(updatedAnalysis);
-        setSelectedFix(null);
-        alert('Fix applied successfully!');
       } else {
-        alert(`Failed to apply fix: ${result.message}`);
+        alert(`❌ Failed to apply fix: ${result.message}`);
       }
     } catch (err) {
-      alert('Error applying fix. Please try again.');
+      alert('❌ Error applying fix. Please try again.');
     }
   };
 
@@ -175,19 +182,19 @@ export default function AnalysisPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-6">
-          <div className="text-2xl font-bold text-white">{analysis.summary.total_critical}</div>
+          <div className="text-2xl font-bold text-white">{(analysis.critical_risks || []).length}</div>
           <div className="text-red-300">Critical Risks</div>
         </div>
         <div className="bg-orange-500/20 border border-orange-500/30 rounded-xl p-6">
-          <div className="text-2xl font-bold text-white">{analysis.summary.total_high}</div>
+          <div className="text-2xl font-bold text-white">{(analysis.high_risks || []).length}</div>
           <div className="text-orange-300">High Risks</div>
         </div>
         <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-xl p-6">
-          <div className="text-2xl font-bold text-white">{analysis.summary.total_medium}</div>
+          <div className="text-2xl font-bold text-white">{(analysis.medium_risks || []).length}</div>
           <div className="text-yellow-300">Medium Risks</div>
         </div>
         <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-6">
-          <div className="text-2xl font-bold text-white">{analysis.auto_fixes.length}</div>
+          <div className="text-2xl font-bold text-white">{(analysis.auto_fixes || []).length}</div>
           <div className="text-green-300">Auto-Fixes</div>
         </div>
       </div>
@@ -200,10 +207,10 @@ export default function AnalysisPage() {
             <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-red-500/30">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                Critical Risks ({analysis.critical_risks.length})
+                Critical Risks ({(analysis.critical_risks || []).length})
               </h2>
               <div className="space-y-4">
-                {analysis.critical_risks.map((risk, index) => (
+                {(analysis.critical_risks || []).map((risk, index) => (
                   <div
                     key={index}
                     className="p-4 bg-red-500/10 rounded-lg border border-red-500/20 cursor-pointer hover:bg-red-500/15 transition-colors"
@@ -226,14 +233,14 @@ export default function AnalysisPage() {
           )}
 
           {/* High Risks */}
-          {analysis.high_risks.length > 0 && (
+          {(analysis.high_risks || []).length > 0 && (
             <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-orange-500/30">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <span className="w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
-                High Risks ({analysis.high_risks.length})
+                High Risks ({(analysis.high_risks || []).length})
               </h2>
               <div className="space-y-3">
-                {analysis.high_risks.map((risk, index) => (
+                {(analysis.high_risks || []).map((risk, index) => (
                   <div
                     key={index}
                     className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20 cursor-pointer hover:bg-orange-500/15 transition-colors"
@@ -250,14 +257,14 @@ export default function AnalysisPage() {
           )}
 
           {/* Medium Risks */}
-          {analysis.medium_risks.length > 0 && (
+          {(analysis.medium_risks || []).length > 0 && (
             <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-yellow-500/30">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <span className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                Medium Risks ({analysis.medium_risks.length})
+                Medium Risks ({(analysis.medium_risks || []).length})
               </h2>
               <div className="space-y-3">
-                {analysis.medium_risks.map((risk, index) => (
+                {(analysis.medium_risks || []).map((risk, index) => (
                   <div
                     key={index}
                     className="p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/20 cursor-pointer hover:bg-yellow-500/15 transition-colors"
@@ -280,10 +287,10 @@ export default function AnalysisPage() {
           <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-green-500/30">
             <h2 className="text-xl font-bold text-white mb-4 flex items-center">
               <span className="text-green-400 mr-2">🛠️</span>
-              Auto-Fix Suggestions ({analysis.auto_fixes.length})
+              Auto-Fix Suggestions ({(analysis.auto_fixes || []).length})
             </h2>
             <div className="space-y-4">
-              {analysis.auto_fixes.map((fix, index) => (
+              {(analysis.auto_fixes || []).map((fix, index) => (
                 <div
                   key={index}
                   className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 cursor-pointer hover:bg-green-500/15 transition-colors"
@@ -302,7 +309,7 @@ export default function AnalysisPage() {
             <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-blue-500/30">
               <h2 className="text-xl font-bold text-white mb-4">Compliance Standards</h2>
               <div className="space-y-2">
-                {analysis.compliance.standards.map((standard, index) => (
+                {(analysis.compliance.standards || []).map((standard, index) => (
                   <div key={index} className="flex items-center text-sm">
                     <span className="text-green-400 mr-2">✓</span>
                     <span className="text-gray-300">{standard}</span>
@@ -313,7 +320,7 @@ export default function AnalysisPage() {
                 <div className="mt-4">
                   <h3 className="font-semibold text-white mb-2">Compliance Gaps</h3>
                   <div className="space-y-1">
-                    {analysis.compliance.gaps.map((gap, index) => (
+                    {(analysis.compliance.gaps || []).map((gap, index) => (
                       <div key={index} className="flex items-center text-sm">
                         <span className="text-red-400 mr-2">⚠</span>
                         <span className="text-gray-300">{gap}</span>
@@ -470,10 +477,14 @@ export default function AnalysisPage() {
               </button>
               <button 
                 onClick={() => handleApplyFix(analysis.auto_fixes.indexOf(selectedFix))}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
               >
-                Apply Fix
+                <span>🚀 Apply Fix & Commit</span>
               </button>
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-400">
+              <p>📝 This will create a new branch, apply the fix, commit changes, and push to GitHub.</p>
             </div>
           </div>
         </div>
@@ -484,8 +495,15 @@ export default function AnalysisPage() {
 
 function calculateComplianceScore(analysis: AIAnalysisResponse): number {
   let baseScore = 100;
-  baseScore -= analysis.critical_risks.length * 25;
-  baseScore -= analysis.high_risks.length * 15;
-  baseScore -= analysis.medium_risks.length * 5;
+  
+  // Safe data access with fallbacks
+  const criticalRisks = analysis.critical_risks || [];
+  const highRisks = analysis.high_risks || [];
+  const mediumRisks = analysis.medium_risks || [];
+  
+  baseScore -= criticalRisks.length * 25;
+  baseScore -= highRisks.length * 15;
+  baseScore -= mediumRisks.length * 5;
+  
   return Math.max(0, baseScore);
 }

@@ -22,8 +22,8 @@ type GitHubAppAuth struct {
 func PostAIResultsToPR(prHTMLURL string, analysis *AIAnalysisResponse) error {
     fmt.Printf("📤 Posting AI results to GitHub PR: %s\n", prHTMLURL)
     
-    // Extract PR number from URL (we don't need repo name for logging)
-    _, prNumber, err := extractRepoAndPR(prHTMLURL) // Use _ to ignore repo name
+    // Extract PR number from URL
+    _, prNumber, err := extractRepoAndPR(prHTMLURL)
     if err != nil {
         return fmt.Errorf("failed to parse PR URL: %v", err)
     }

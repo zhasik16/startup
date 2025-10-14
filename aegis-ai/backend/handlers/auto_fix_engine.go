@@ -79,7 +79,7 @@ func (e *AutoFixEngine) GenerateFixes(risks []Risk, originalCode map[string]stri
 }
 
 func (e *AutoFixEngine) generateFixForRisk(risk Risk, originalCode string) *AutoFix {
-    for _, template := range e.FixTemplates {  // ← Fixed: use _ instead of ruleName
+    for _, template := range e.FixTemplates {
         if template.Pattern.MatchString(risk.CodeSnippet) {
             fixedCode := template.Pattern.ReplaceAllString(risk.CodeSnippet, template.Replacement)
             

@@ -13,8 +13,8 @@ type PullRequestEvent struct {
         HTMLURL string `json:"html_url"`
         Head    struct {
             Ref string `json:"ref"`
-            SHA string `json:"sha"`  // 🚨 FIXED: Added closing quote
-        } `json:"head"`  // 🚨 FIXED: Added closing brace
+            SHA string `json:"sha"`
+        } `json:"head"`
     } `json:"pull_request"`
     Repository struct {
         CloneURL string `json:"clone_url"`
@@ -33,7 +33,7 @@ func HandleWebhook(c *gin.Context) {
     }
     
     // 🚀 IMMEDIATE RESPONSE - process async
-    if event.Action == "opened" {
+    if event.Action == "opened" || event.Action == "synchronize" {
         fmt.Printf("🎯 Starting ASYNC analysis for PR #%d\n", event.Number)
         
         // Process in background goroutine
@@ -73,6 +73,11 @@ func processWithAIAsync(event PullRequestEvent) {
         fmt.Printf("❌ [PR #%d] AI Analysis failed: %v\n", event.Number, err)
         return
     }
+    
+    // Store analysis with PR-specific ID
+    analysisID := fmt.Sprintf("pr_%d", event.Number)
+    analyses[analysisID] = analysis
+    analysisStatus[analysisID] = "completed"
     
     fmt.Printf("✅ [PR #%d] Analysis complete: %d critical risks found\n", event.Number, len(analysis.CriticalRisks))
     

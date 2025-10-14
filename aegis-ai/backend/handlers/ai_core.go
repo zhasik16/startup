@@ -13,7 +13,7 @@ import (
     "time"
 )
 
-// UPDATED TYPE DEFINITIONS - Added missing fields
+// UPDATED TYPE DEFINITIONS - Fixed JSON field names for frontend
 type AIAnalysisRequest struct {
     Codebase map[string]string `json:"codebase"`
     Context  AnalysisContext   `json:"context"`
@@ -26,9 +26,8 @@ type AIAnalysisResponse struct {
     AutoFixes     []AutoFix      `json:"auto_fixes"`
     Explanations  []string       `json:"explanations"`
     Summary       AnalysisSummary `json:"summary"`
-    // ADD THESE MISSING FIELDS
-    Architecture *ArchitectureAnalysis `json:"architecture,omitempty"`
-    Compliance   *ComplianceAnalysis   `json:"compliance,omitempty"`
+    Architecture  *ArchitectureAnalysis `json:"architecture,omitempty"`
+    Compliance    *ComplianceAnalysis   `json:"compliance,omitempty"`
 }
 
 type Risk struct {
@@ -42,11 +41,11 @@ type Risk struct {
 }
 
 type AutoFix struct {
-    RiskTitle    string `json:"risk_title"`    // Keep existing
-    Original     string `json:"original"`      // Keep existing  
-    Fixed        string `json:"fixed"`         // Keep existing
-    Explanation  string `json:"explanation"`   // ADD THIS MISSING FIELD
-    Regulation   string `json:"regulaiton"`
+    RiskTitle    string `json:"risk_title"`
+    Original     string `json:"original"`
+    Fixed        string `json:"fixed"`
+    Explanation  string `json:"explanation"`
+    Regulation   string `json:"regulation"`
 }
 
 type AnalysisSummary struct {
@@ -63,7 +62,6 @@ type AnalysisContext struct {
     Requirements []string `json:"requirements"`
 }
 
-// ADD THESE NEW STRUCTS FOR MISSING FIELDS
 type ArchitectureAnalysis struct {
     Overview    string   `json:"overview"`
     Strengths   []string `json:"strengths"`
@@ -104,7 +102,6 @@ type HuggingFaceResponse []struct {
     GeneratedText string `json:"generated_text"`
 }
 
-// Add Groq response structures
 type GroqRequest struct {
     Messages    []GroqMessage `json:"messages"`
     Model       string        `json:"model"`
@@ -128,6 +125,10 @@ type GroqResponse struct {
         Message string `json:"message"`
     } `json:"error"`
 }
+
+// Store analyses in memory (global variables)
+var analyses = make(map[string]*AIAnalysisResponse)
+var analysisStatus = make(map[string]string)
 
 // THE MAIN AI FUNCTION - GROQ FIRST
 func AnalyzeEntireCodebase(repoPath string) (*AIAnalysisResponse, error) {

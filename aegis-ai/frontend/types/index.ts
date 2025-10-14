@@ -64,3 +64,20 @@ export interface PullRequestEvent {
   };
 }
 
+export interface GitHubRepo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string;
+  html_url: string;
+  private: boolean;
+  fork: boolean;
+}
+
+export interface GitHubUser {
+  id: number;
+  login: string;
+  name: string;
+  avatar_url: string;
+  email: string;
+}
