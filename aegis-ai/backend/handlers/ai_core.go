@@ -13,122 +13,10 @@ import (
     "time"
 )
 
-// UPDATED TYPE DEFINITIONS - Fixed JSON field names for frontend
-type AIAnalysisRequest struct {
-    Codebase map[string]string `json:"codebase"`
-    Context  AnalysisContext   `json:"context"`
-}
-
-type AIAnalysisResponse struct {
-    CriticalRisks []Risk         `json:"critical_risks"`
-    HighRisks     []Risk         `json:"high_risks"`
-    MediumRisks   []Risk         `json:"medium_risks"`
-    AutoFixes     []AutoFix      `json:"auto_fixes"`
-    Explanations  []string       `json:"explanations"`
-    Summary       AnalysisSummary `json:"summary"`
-    Architecture  *ArchitectureAnalysis `json:"architecture,omitempty"`
-    Compliance    *ComplianceAnalysis   `json:"compliance,omitempty"`
-}
-
-type Risk struct {
-    File        string  `json:"file"`
-    Line        int     `json:"line"`
-    Title       string  `json:"title"`
-    Description string  `json:"description"`
-    Impact      string  `json:"impact"`
-    Confidence  float64 `json:"confidence"`
-    CodeSnippet string  `json:"code_snippet"`
-}
-
-type AutoFix struct {
-    RiskTitle    string `json:"risk_title"`
-    Original     string `json:"original"`
-    Fixed        string `json:"fixed"`
-    Explanation  string `json:"explanation"`
-    Regulation   string `json:"regulation"`
-}
-
-type AnalysisSummary struct {
-    TotalCritical int      `json:"total_critical"`
-    TotalHigh     int      `json:"total_high"`
-    TotalMedium   int      `json:"total_medium"`
-    BusinessType  string   `json:"business_type"`
-    Compliance    []string `json:"compliance_requirements"`
-}
-
-type AnalysisContext struct {
-    Languages    []string `json:"languages"`
-    BusinessType string   `json:"business_type"`
-    Requirements []string `json:"requirements"`
-}
-
-type ArchitectureAnalysis struct {
-    Overview    string   `json:"overview"`
-    Strengths   []string `json:"strengths"`
-    Concerns    []string `json:"concerns"`
-    Recommendations []string `json:"recommendations"`
-}
-
-type ComplianceAnalysis struct {
-    Standards   []string `json:"standards"`
-    Gaps        []string `json:"gaps"`
-    Recommendations []string `json:"recommendations"`
-}
-
-type OpenRouterRequest struct {
-    Model       string                  `json:"model"`
-    Messages    []OpenRouterMessage     `json:"messages"`
-    Temperature float64                 `json:"temperature,omitempty"`
-    MaxTokens   int                     `json:"max_tokens,omitempty"`
-}
-
-type OpenRouterMessage struct {
-    Role    string `json:"role"`
-    Content string `json:"content"`
-}
-
-type OpenRouterResponse struct {
-    Choices []struct {
-        Message struct {
-            Content string `json:"content"`
-        } `json:"message"`
-    } `json:"choices"`
-    Error struct {
-        Message string `json:"message"`
-    } `json:"error"`
-}
-
-type HuggingFaceResponse []struct {
-    GeneratedText string `json:"generated_text"`
-}
-
-type GroqRequest struct {
-    Messages    []GroqMessage `json:"messages"`
-    Model       string        `json:"model"`
-    Temperature float64       `json:"temperature,omitempty"`
-    MaxTokens   int           `json:"max_tokens,omitempty"`
-    TopP        float64       `json:"top_p,omitempty"`
-}
-
-type GroqMessage struct {
-    Role    string `json:"role"`
-    Content string `json:"content"`
-}
-
-type GroqResponse struct {
-    Choices []struct {
-        Message struct {
-            Content string `json:"content"`
-        } `json:"message"`
-    } `json:"choices"`
-    Error struct {
-        Message string `json:"message"`
-    } `json:"error"`
-}
-
 // Store analyses in memory (global variables)
 var analyses = make(map[string]*AIAnalysisResponse)
 var analysisStatus = make(map[string]string)
+var analysisStorage = make(map[string]*Analysis)
 
 // THE MAIN AI FUNCTION - GROQ FIRST
 func AnalyzeEntireCodebase(repoPath string) (*AIAnalysisResponse, error) {
@@ -610,4 +498,9 @@ func createFallbackResponse(aiResponse string) *AIAnalysisResponse {
             BusinessType:  "unknown",
         },
     }
+}
+
+// HuggingFaceResponse type (only this type remains as it's not in types.go)
+type HuggingFaceResponse []struct {
+    GeneratedText string `json:"generated_text"`
 }

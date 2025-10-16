@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from "next-auth/react"
 
 interface GitHubRepo {
   id: number;
@@ -19,7 +20,7 @@ interface ReposResponse {
 }
 
 export default function Repositories() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,21 +29,37 @@ export default function Repositories() {
 
   useEffect(() => {
     const fetchRepos = async () => {
-      if (session?.accessToken) {
+      if (status === 'loading') {
+        return
+      }
+
+      if (status === 'unauthenticated') {
+        setError('Please sign in with GitHub to view your repositories')
+        setLoading(false)
+        return
+      }
+
+      const accessToken = session?.accessToken
+      
+      if (accessToken) {
         try {
           const backendUrl = 'https://organic-system-4jj5767gwp6w2q9wq-8080.app.github.dev'
+          
           const response = await fetch(`${backendUrl}/api/user/repos`, {
             headers: {
-              'Authorization': `Bearer ${session.accessToken}`,
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
             },
           })
           
           if (!response.ok) {
+            const errorText = await response.text()
             throw new Error(`Failed to load repositories: ${response.status}`)
           }
           
           const data: ReposResponse = await response.json()
           setRepos(data.repos || [])
+          
         } catch (error) {
           console.error('Failed to fetch repositories:', error)
           setError('Failed to load repositories. Please try again.')
@@ -50,27 +67,32 @@ export default function Repositories() {
           setLoading(false)
         }
       } else {
+        setError('Not authenticated. Please sign in with GitHub.')
         setLoading(false)
       }
     }
 
     fetchRepos()
-  }, [session])
+  }, [session, status])
 
   const handleAnalyze = async (repo: GitHubRepo) => {
-    if (!session?.accessToken) return
+    const accessToken = session?.accessToken
+    
+    if (!accessToken) {
+      setError('Not authenticated. Please sign in.')
+      return
+    }
     
     setAnalyzingRepo(repo.full_name)
     
     try {
       const backendUrl = 'https://organic-system-4jj5767gwp6w2q9wq-8080.app.github.dev'
       
-      // Trigger analysis
       const response = await fetch(`${backendUrl}/api/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           repo_url: repo.html_url,
@@ -85,7 +107,6 @@ export default function Repositories() {
 
       const analysisData = await response.json()
       
-      // Redirect to analysis results page
       router.push(`/analysis/${analysisData.analysis_id}`)
       
     } catch (error) {
@@ -95,7 +116,19 @@ export default function Repositories() {
     }
   }
 
-  if (loading) {
+  const handleSignIn = async () => {
+    await signIn('github')
+  }
+
+  const handleRetry = () => {
+    setError('')
+    setLoading(true)
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  }
+
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -112,10 +145,10 @@ export default function Repositories() {
         <div className="text-center">
           <p className="text-red-400 text-lg mb-4">{error}</p>
           <button 
-            onClick={() => window.location.reload()}
+            onClick={handleSignIn}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
-            Try Again
+            Sign In with GitHub
           </button>
         </div>
       </div>

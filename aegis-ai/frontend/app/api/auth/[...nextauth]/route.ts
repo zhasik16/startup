@@ -1,4 +1,3 @@
-// app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth"
 import GitHubProvider from "next-auth/providers/github"
 
@@ -9,29 +8,30 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GITHUB_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email repo",
+          scope: "repo user", // Fixed scopes - this is the key!
         },
-      },
-      client: {
-        token_endpoint_auth_method: "client_secret_post",
       },
     })
   ],
   callbacks: {
     async jwt({ token, account }: any) {
+      console.log('🔑 JWT Callback - Account:', account ? 'Has account' : 'No account')
       if (account) {
         token.accessToken = account.access_token
         token.provider = account.provider
+        console.log('🔑 JWT - Access token set:', account.access_token?.substring(0, 20) + '...')
       }
       return token
     },
     async session({ session, token }: any) {
+      console.log('🔑 Session Callback - Token has accessToken:', !!token.accessToken)
       session.accessToken = token.accessToken
       session.provider = token.provider
+      console.log('🔑 Session - Access token:', session.accessToken?.substring(0, 20) + '...')
       return session
     },
   },
-  // No debug option at all
+  debug: true, // Add debug to see what's happening
 }
 
 const handler = NextAuth(authOptions)

@@ -30,6 +30,26 @@ func NewGitHubFixApplier(token, repoURL string) *GitHubFixApplier {
     }
 }
 
+// ConfigureGitUser sets up git configuration with user details
+func (g *GitHubFixApplier) ConfigureGitUser(username, email string) error {
+    fmt.Printf("🔧 Configuring git user: %s <%s>\n", username, email)
+    
+    // Set git user name
+    cmd := exec.Command("git", "config", "user.name", username)
+    if err := cmd.Run(); err != nil {
+        return fmt.Errorf("failed to set git user name: %v", err)
+    }
+    
+    // Set git user email
+    cmd = exec.Command("git", "config", "user.email", email)
+    if err := cmd.Run(); err != nil {
+        return fmt.Errorf("failed to set git user email: %v", err)
+    }
+    
+    fmt.Printf("✅ Git configured for user: %s <%s>\n", username, email)
+    return nil
+}
+
 func (g *GitHubFixApplier) ApplyFixAndCommit(fix AutoFix, filePath string, lineNumber int) (*FixApplicationResult, error) {
     // Create temporary directory
     tempDir := fmt.Sprintf("/tmp/security-fix-%d", time.Now().Unix())

@@ -28,6 +28,13 @@ func HandleManualAnalysis(c *gin.Context) {
     analysisID := generateAnalysisID()
     analysisStatus[analysisID] = "processing"
 
+    // Store in analysisStorage for fix handling
+    analysisStorage[analysisID] = &Analysis{
+        ID:       analysisID,
+        RepoURL:  req.RepoURL,
+        RepoName: extractRepoName(req.RepoURL),
+    }
+
     // Start analysis in background
     go processManualAnalysis(analysisID, req.RepoURL)
 
@@ -62,8 +69,16 @@ func processManualAnalysis(analysisID string, repoURL string) {
         return
     }
 
-    // Store analysis
+    // Store analysis in both systems
     analyses[analysisID] = analysis
+    
+    // Update analysisStorage with the full analysis data
+    if storedAnalysis, exists := analysisStorage[analysisID]; exists {
+        storedAnalysis.Risks = append(analysis.CriticalRisks, analysis.HighRisks...)
+        storedAnalysis.AutoFixes = analysis.AutoFixes
+        storedAnalysis.Summary = analysis.Summary
+    }
+    
     analysisStatus[analysisID] = "completed"
     
     fmt.Printf("✅ [ANALYSIS %s] Analysis complete: %d critical risks found\n", analysisID, len(analysis.CriticalRisks))
@@ -99,45 +114,6 @@ func GetAnalysisStatus(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"status": status})
-}
-
-func ApplyFix(c *gin.Context) {
-    analysisID := c.Param("id")
-    fixIndexStr := c.Param("fixIndex")
-    
-    // Convert fixIndex to integer
-    fixIndex, err := strconv.Atoi(fixIndexStr)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fix index"})
-        return
-    }
-    
-    // Check if analysis exists
-    analysis, exists := analyses[analysisID]
-    if !exists {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Analysis not found"})
-        return
-    }
-    
-    // Check if fix index is valid
-    if fixIndex < 0 || fixIndex >= len(analysis.AutoFixes) {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid fix index"})
-        return
-    }
-    
-    fix := analysis.AutoFixes[fixIndex]
-    
-    fmt.Printf("🛠️ Applying fix for analysis %s, fix index %d: %s\n", analysisID, fixIndex, fix.RiskTitle)
-    fmt.Printf("📝 Fix details: %s\n", fix.Explanation)
-    
-    // Return response with the new fields
-    c.JSON(http.StatusOK, gin.H{
-        "success": true,
-        "message": fmt.Sprintf("Fix applied successfully for: %s", fix.RiskTitle),
-        "fix_applied": fix.RiskTitle,
-        "details": fmt.Sprintf("Applied security fix: %s. Regulation: %s", fix.Explanation, fix.Regulation),
-        "next_steps": "The fix has been applied locally. In production, this would commit to GitHub.",
-    })
 }
 
 func GetAllAnalyses(c *gin.Context) {
